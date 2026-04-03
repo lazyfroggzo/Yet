@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>YouTube Studio</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1f1f1f;
+    --surface2: #272727;
+    --border: #3f3f3f;
+    --text: #ffffff;
+    --muted: #aaaaaa;
+    --accent: #3ea6ff;
+    --red: #ff0000;
+    --tab-active: #ffffff;
+  }
+
+  body {
+    font-family: 'Roboto', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── TOP HEADER ── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 56px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .hamburger { display: flex; flex-direction: column; gap: 5px; cursor: pointer; padding: 8px; }
+  .hamburger span { width: 18px; height: 2px; background: var(--text); border-radius: 2px; }
+  .yt-logo { display: flex; align-items: center; gap: 6px; text-decoration: none; }
+  .yt-logo svg { width: 90px; }
+  .studio-badge {
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: 2px;
+    letter-spacing: 0.3px;
+    padding-top: 2px;
+  }
+  .header-right { display: flex; align-items: center; gap: 20px; }
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 500; cursor: pointer;
+  }
+
+  /* ── SIDE NAV ── */
+  .layout { display: flex; }
+  .sidenav {
+    width: 72px;
+    background: var(--bg);
+    border-right: 1px solid var(--border);
+    min-height: calc(100vh - 56px);
+    display: flex;
+    flex-direction: column;
+    padding: 8px 0;
+    position: sticky;
+    top: 56px;
+    height: calc(100vh - 56px);
+  }
+  .nav-item {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px; padding: 12px 8px; cursor: pointer; border-radius: 8px; margin: 2px 6px;
+    transition: background 0.15s;
+  }
+  .nav-item:hover { background: var(--surface2); }
+  .nav-item.active { background: var(--surface2); }
+  .nav-item svg { width: 20px; height: 20px; fill: var(--muted); }
+  .nav-item.active svg { fill: var(--text); }
+  .nav-item span { font-size: 10px; color: var(--muted); text-align: center; }
+  .nav-item.active span { color: var(--text); }
+
+  /* ── MAIN CONTENT ── */
+  .main { flex: 1; padding: 0; }
+
+  /* ── PAGE HEADER ── */
+  .page-header {
+    padding: 24px 32px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .page-title { font-size: 20px; font-weight: 500; }
+  .date-picker {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 4px; padding: 8px 14px; cursor: pointer;
+    font-size: 13px; color: var(--text); font-family: 'Roboto', sans-serif;
+  }
+  .date-picker svg { width: 16px; height: 16px; fill: var(--muted); }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    gap: 0;
+    padding: 0 32px;
+    border-bottom: 1px solid var(--border);
+    margin-top: 20px;
+  }
+  .tab {
+    padding: 14px 20px;
+    font-size: 14px;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s;
+    font-family: 'Roboto', sans-serif;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--tab-active); border-bottom: 2px solid var(--tab-active); }
+
+  /* ── HERO TEXT ── */
+  .hero {
+    text-align: center;
+    padding: 40px 32px 32px;
+  }
+  .hero h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  /* ── METRICS ROW ── */
+  .metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 0 32px;
+  }
+  .metric {
+    padding: 20px 24px 24px;
+    border-right: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  .metric:last-child { border-right: none; }
+  .metric:hover { background: var(--surface); }
+  .metric-label {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .metric-label svg { width: 14px; height: 14px; fill: var(--muted); }
+  .metric-value { font-size: 28px; font-weight: 400; letter-spacing: -0.5px; }
+  .metric-change {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+  .metric-change.up { color: #3ddc84; }
+  .metric-change.down { color: #ff5252; }
+
+  /* ── CHART ── */
+  .chart-section {
+    margin: 24px 32px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+  }
+  .chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .chart-title { font-size: 14px; font-weight: 500; }
+  .chart-legend { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+  #viewChart { max-height: 220px; }
+
+  /* ── BOTTOM GRID ── */
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 0 32px 32px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+  }
+  .card-title { font-size: 14px; font-weight: 500; margin-bottom: 16px; }
+  .vid-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .vid-row:last-child { border-bottom: none; }
+  .vid-thumb {
+    width: 64px; height: 36px; border-radius: 4px;
+    background: var(--surface2);
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .vid-info { flex: 1; min-width: 0; }
+  .vid-title { font-size: 13px; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .vid-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .vid-stat { font-size: 13px; font-weight: 500; text-align: right; }
+
+  /* ── SETTINGS PANEL ── */
+  .settings-toggle {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--red);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 52px; height: 52px;
+    font-size: 22px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 20px rgba(255,0,0,0.4);
+    z-index: 200;
+    transition: transform 0.15s;
+  }
+  .settings-toggle:hover { transform: scale(1.08); }
+  .settings-panel {
+    position: fixed;
+    bottom: 88px;
+    right: 24px;
+    background: #1a1a1a;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    width: 320px;
+    z-index: 200;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    display: none;
+  }
+  .settings-panel.open { display: block; }
+  .settings-panel h3 { font-size: 14px; font-weight: 500; margin-bottom: 16px; color: var(--muted); }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .field input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 14px;
+    padding: 8px 12px;
+    font-family: 'Roboto', sans-serif;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .field input:focus { border-color: var(--accent); }
+  .apply-btn {
+    width: 100%;
+    margin-top: 4px;
+    background: var(--red);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: 'Roboto', sans-serif;
+    transition: background 0.15s;
+  }
+  .apply-btn:hover { background: #cc0000; }
+
+  /* ── LIVE TICK ── */
+  .live-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+  }
+  .live-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--red);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.2;} }
+
+  .info-icon { cursor: help; opacity: 0.7; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <div class="hamburger">
+      <span></span><span></span><span></span>
+    </div>
+    <a class="yt-logo" href="#">
+      <svg viewBox="0 0 90 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M13.5 0C6.8 0 3 .4 3 .4 1.3.6 0 2 0 3.8v12.4C0 18 1.3 19.4 3 19.6c0 0 3.8.4 10.5.4S24 19.6 24 19.6c1.7-.2 3-1.6 3-3.4V3.8C27 2 25.7.6 24 .4 24 .4 20.2 0 13.5 0zm-3 14V6l8 4-8 4z" fill="#FF0000"/>
+        <text x="31" y="15" fill="white" font-family="Roboto,sans-serif" font-size="13" font-weight="500">Studio</text>
+      </svg>
+    </a>
+  </div>
+  <div class="header-right">
+    <span class="live-badge"><span class="live-dot"></span>Live</span>
+    <div class="avatar" id="avatarInitials">YT</div>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- SIDE NAV -->
+  <nav class="sidenav">
+    <div class="nav-item active">
+      <svg viewBox="0 0 24 24"><path d="M3 13h1v7c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2v-7h1a1 1 0 0 0 .707-1.707l-9-9a.999.999 0 0 0-1.414 0l-9 9A1 1 0 0 0 3 13zm7 7v-5h4v5h-4zm2-15.586 6 6V20h-2v-5c0-1.103-.897-2-2-2h-4c-1.103 0-2 .897-2 2v5H7v-9.586l5-5z"/></svg>
+      <span>Dashboard</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.103 0 2-.897 2-2V5c0-1.103-.897-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z"/></svg>
+      <span>Content</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8zm1-13h-2v6l5.25 3.15.75-1.23-4-2.37V7z"/></svg>
+      <span>Analytics</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.103 0-2 .897-2 2v18l5.333-4H20c1.103 0 2-.897 2-2V4c0-1.103-.897-2-2-2zm0 14H6.667L4 18V4h16v12z"/></svg>
+      <span>Comments</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24"><path d="M5 3H2v3h3V3zm0 5H2v3h3V8zm0 5H2v3h3v-3zm4-10H6v3h3V3zm0 5H6v3h3V8zm0 5H6v3h3v-3zm4-10h-3v3h3V3zm0 5h-3v3h3V8zm0 5h-3v3h3v-3zm4-10h-3v3h3V3zm0 5h-3v3h3V8zm0 5h-3v3h3v-3zm3-10h-2v3h2V3zm0 5h-2v3h2V8zm0 5h-2v3h2v-3z"/></svg>
+      <span>Subtitles</span>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="page-header">
+      <h2 class="page-title">Channel analytics</h2>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="date-picker">
+          <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.103 0-2 .897-2 2v14c0 1.103.897 2 2 2h14c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2zm0 16H5V8h14v12zM7 10h2v2H7zm0 4h2v2H7zm4-4h2v2h-2zm0 4h2v2h-2zm4-4h2v2h-2z"/></svg>
+          Last 28 days
+        </div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <div class="tab active">Overview</div>
+      <div class="tab">Content</div>
+      <div class="tab">Audience</div>
+      <div class="tab">Revenue</div>
+      <div class="tab">Inspiration</div>
+    </div>
+
+    <!-- HERO -->
+    <div class="hero">
+      <h1 id="heroText">Your channel has had 0 views so far</h1>
+    </div>
+
+    <!-- METRICS -->
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">Views</div>
+        <div class="metric-value" id="mViews">0</div>
+        <div class="metric-change up" id="mViewsChg">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">
+          Watch time (hours)
+          <svg class="info-icon" viewBox="0 0 24 24"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        </div>
+        <div class="metric-value" id="mWatch">0</div>
+        <div class="metric-change up" id="mWatchChg">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">
+          Subscribers
+          <svg class="info-icon" viewBox="0 0 24 24"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        </div>
+        <div class="metric-value" id="mSubs">0</div>
+        <div class="metric-change up" id="mSubsChg">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Est. revenue</div>
+        <div class="metric-value" id="mRev">$0</div>
+        <div class="metric-change up" id="mRevChg">—</div>
+      </div>
+    </div>
+
+    <!-- CHART -->
+    <div class="chart-section">
+      <div class="chart-header">
+        <span class="chart-title">Views — last 365 days</span>
+        <div class="chart-legend">
+          <div class="legend-dot"></div>
+          <span>Views</span>
+        </div>
+      </div>
+      <canvas id="viewChart"></canvas>
+    </div>
+
+    <!-- BOTTOM GRID -->
+    <div class="bottom-grid">
+      <!-- Top Videos -->
+      <div class="card">
+        <div class="card-title">Top videos</div>
+        <div id="vidList"></div>
+      </div>
+      <!-- Top Stats -->
+      <div class="card">
+        <div class="card-title">Key metrics</div>
+        <table style="width:100%;font-size:13px;border-collapse:collapse;">
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:10px 0;color:var(--muted);">Impressions</td>
+            <td style="text-align:right;padding:10px 0;" id="kImp">—</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:10px 0;color:var(--muted);">Click-through rate</td>
+            <td style="text-align:right;padding:10px 0;" id="kCtr">—</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:10px 0;color:var(--muted);">Avg view duration</td>
+            <td style="text-align:right;padding:10px 0;" id="kAvd">—</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:10px 0;color:var(--muted);">Revenue per mille (RPM)</td>
+            <td style="text-align:right;padding:10px 0;" id="kRpm">—</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 0;color:var(--muted);">Total subscribers</td>
+            <td style="text-align:right;padding:10px 0;" id="kTotalSubs">—</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- SETTINGS BUTTON -->
+<button class="settings-toggle" onclick="toggleSettings()" title="Prank settings">⚙</button>
+
+<!-- SETTINGS PANEL -->
+<div class="settings-panel" id="settingsPanel">
+  <h3>Prank settings</h3>
+  <div class="field"><label>Channel name</label><input id="cfgName" value="MarcusPlays" /></div>
+  <div class="field"><label>Total subscribers</label><input id="cfgTotalSubs" type="number" value="2400000" /></div>
+  <div class="field"><label>Subscriber gain (period)</label><input id="cfgSubs" type="number" value="6500" /></div>
+  <div class="field"><label>Views (28 days)</label><input id="cfgViews" type="number" value="2722167" /></div>
+  <div class="field"><label>Watch time hours</label><input id="cfgWatch" type="number" value="41500" /></div>
+  <div class="field"><label>RPM ($)</label><input id="cfgRpm" type="number" value="4.50" step="0.01" /></div>
+  <div class="field"><label>CTR (%)</label><input id="cfgCtr" type="number" value="6.2" step="0.1" /></div>
+  <div class="field"><label>Avg view duration (e.g. 4:32)</label><input id="cfgAvd" value="4:32" /></div>
+  <button class="apply-btn" onclick="applySettings()">Apply changes</button>
+</div>
+
+<script>
+let cfg = {
+  name: 'MarcusPlays',
+  totalSubs: 2400000,
+  subsGain: 6500,
+  views: 2722167,
+  watch: 41500,
+  rpm: 4.50,
+  ctr: 6.2,
+  avd: '4:32'
+};
+
+let liveViews = cfg.views;
+let chartInst = null;
+
+const videos = [
+  { emoji: '🎮', title: 'I went viral doing this…', share: 0.22 },
+  { emoji: '🏆', title: 'Playing ranked for 24 hours straight', share: 0.18 },
+  { emoji: '💀', title: 'This glitch breaks everything', share: 0.14 },
+  { emoji: '🎁', title: 'Surprising my fans with a giveaway', share: 0.12 },
+  { emoji: '🔥', title: 'The most insane comeback ever', share: 0.09 },
+];
+
+function fmtBig(n) {
+  n = Math.round(n);
+  if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return n.toLocaleString();
+}
+function fmt(n) { return Math.round(n).toLocaleString(); }
+function randBetween(a, b) { return a + Math.random() * (b - a); }
+
+function generateChartData(total) {
+  const pts = [];
+  let base = total / 365;
+  for (let i = 0; i < 365; i++) {
+    let spike = (i === 60 || i === 120 || i === 200 || i === 280 || i === 340) ? randBetween(3, 6) : 1;
+    let v = base * spike * randBetween(0.4, 1.6);
+    pts.push(Math.round(v));
+  }
+  return pts;
+}
+
+function buildChart() {
+  const data = generateChartData(cfg.views);
+  const labels = [];
+  const now = new Date();
+  for (let i = 364; i >= 0; i--) {
+    const d = new Date(now); d.setDate(d.getDate() - i);
+    labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+  }
+  const ctx = document.getElementById('viewChart').getContext('2d');
+  if (chartInst) chartInst.destroy();
+  chartInst = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        borderColor: '#3ea6ff',
+        backgroundColor: 'rgba(62,166,255,0.12)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        borderWidth: 1.5
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: '#1f1f1f',
+        borderColor: '#3f3f3f',
+        borderWidth: 1,
+        titleColor: '#fff',
+        bodyColor: '#aaa',
+        callbacks: { label: ctx => ' ' + fmt(ctx.raw) + ' views' }
+      }},
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { maxTicksLimit: 8, color: '#777', font: { size: 11 }, maxRotation: 0 }
+        },
+        y: {
+          position: 'right',
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { callback: v => fmtBig(v), color: '#777', font: { size: 11 } }
+        }
+      },
+      animation: { duration: 800 },
+      responsive: true,
+      maintainAspectRatio: true
+    }
+  });
+}
+
+function buildVids() {
+  const list = document.getElementById('vidList');
+  list.innerHTML = '';
+  videos.forEach(v => {
+    const views = Math.round(cfg.views * v.share * randBetween(0.85, 1.15));
+    const rev = ((views / 1000) * cfg.rpm).toFixed(2);
+    list.innerHTML += `
+      <div class="vid-row">
+        <div class="vid-thumb">${v.emoji}</div>
+        <div class="vid-info">
+          <div class="vid-title">${v.title}</div>
+          <div class="vid-meta">${fmtBig(views)} views · $${rev}</div>
+        </div>
+        <div class="vid-stat" style="color:#3ea6ff;">${fmtBig(views)}</div>
+      </div>`;
+  });
+}
+
+function render() {
+  const rev = (liveViews / 1000) * cfg.rpm;
+  const imp = Math.round(liveViews / (cfg.ctr / 100));
+
+  document.getElementById('heroText').textContent =
+    `Your channel has had ${fmt(liveViews)} views so far`;
+  document.getElementById('mViews').textContent = fmtBig(liveViews);
+  document.getElementById('mWatch').textContent = fmtBig(cfg.watch);
+  document.getElementById('mSubs').textContent = '+' + fmtBig(cfg.subsGain);
+  document.getElementById('mRev').textContent = '$' + fmt(rev);
+
+  document.getElementById('mViewsChg').textContent = '+' + (randBetween(4,15)).toFixed(1) + '% vs prev period';
+  document.getElementById('mWatchChg').textContent = '+' + (randBetween(3,10)).toFixed(1) + '% vs prev period';
+  document.getElementById('mSubsChg').textContent = '+' + (randBetween(5,20)).toFixed(1) + '% vs prev period';
+  document.getElementById('mRevChg').textContent = '+' + (randBetween(4,12)).toFixed(1) + '% vs prev period';
+
+  document.getElementById('kImp').textContent = fmtBig(imp);
+  document.getElementById('kCtr').textContent = cfg.ctr.toFixed(1) + '%';
+  document.getElementById('kAvd').textContent = cfg.avd;
+  document.getElementById('kRpm').textContent = '$' + cfg.rpm.toFixed(2);
+  document.getElementById('kTotalSubs').textContent = fmtBig(cfg.totalSubs);
+
+  const initials = cfg.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  document.getElementById('avatarInitials').textContent = initials;
+
+  document.title = `YouTube Studio – ${cfg.name}`;
+
+  buildChart();
+  buildVids();
+}
+
+function applySettings() {
+  cfg.name = document.getElementById('cfgName').value || 'MyChannel';
+  cfg.totalSubs = parseInt(document.getElementById('cfgTotalSubs').value) || 0;
+  cfg.subsGain = parseInt(document.getElementById('cfgSubs').value) || 0;
+  cfg.views = parseInt(document.getElementById('cfgViews').value) || 0;
+  cfg.watch = parseInt(document.getElementById('cfgWatch').value) || 0;
+  cfg.rpm = parseFloat(document.getElementById('cfgRpm').value) || 0;
+  cfg.ctr = parseFloat(document.getElementById('cfgCtr').value) || 0;
+  cfg.avd = document.getElementById('cfgAvd').value || '4:32';
+  liveViews = cfg.views;
+  render();
+  document.getElementById('settingsPanel').classList.remove('open');
+}
+
+function toggleSettings() {
+  document.getElementById('settingsPanel').classList.toggle('open');
+}
+
+// Live tick — views and revenue creep up realistically
+setInterval(() => {
+  liveViews += Math.floor(Math.random() * 60 + 10);
+  const rev = (liveViews / 1000) * cfg.rpm;
+  document.getElementById('heroText').textContent =
+    `Your channel has had ${fmt(liveViews)} views so far`;
+  document.getElementById('mViews').textContent = fmtBig(liveViews);
+  document.getElementById('mRev').textContent = '$' + fmt(rev);
+}, 2800);
+
+render();
+</script>
+</body>
+</html>
